@@ -34,6 +34,8 @@ enum ownership { external_cpu, external_gpu };
 
 namespace dawn {
 
+typedef double float_type;
+
 struct domain {
   std::array<uint_t, NDIM> dims;
   std::array<uint_t, NHALO> halos;
@@ -67,10 +69,15 @@ struct domain {
 
 namespace storage_traits_t {
 
+// gridtools::dawn::storage_traits_t::storage_info_t<0, 3, gridtools::halo<3, 3, 0> >::storage_info_t(unsigned int, unsigned int, unsigned int)
 template <int BeginIndex, uint_t Dim, typename HaloType> struct storage_info_t {
   int begin_index = BeginIndex;
   uint_t dim = Dim;
   HaloType halo;
+  std::array<uint_t, NDIM> shape;
+
+  storage_info_t(uint_t isize, uint_t jsize, uint_t ksize) :
+                 shape{isize, jsize, ksize} {}
 };
 
 template <typename DataType, typename StorageType> struct data_store_t {
@@ -84,21 +91,36 @@ struct meta_data {
   std::array<uint_t, NDIM> shape;
   std::array<uint_t, NDIM> strides;
   //std::array<int, NDIM> halos;
+
+  meta_data(uint_t isize, uint_t jsize, uint_t ksize) :
+            shape{isize, jsize, ksize} {}
+
+  meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides) :
+            shape(shape), strides(strides) {}
 };
 
+typedef meta_data meta_data_t;
 typedef meta_data meta_data_ijk_t;
 
-template <typename DataType = double> struct storage {
+template <typename DataType = float_type> struct storage {
   meta_data m_data;
   DataType* ptr;
   ownership platform;
+  std::string name;
+
+  storage(meta_data& meta, const std::string& name) :
+          m_data(meta), name(name) {}
+
+  storage(meta_data meta, DataType* ptr, ownership platform) :
+      m_data(meta), ptr(ptr), platform(platform), name("") {}
 
   void sync() {
     // No-op...
   }
 };
 
-typedef storage<double> storage_ijk_t;
+typedef storage<float_type> storage_t;
+typedef storage<float_type> storage_ijk_t;
 
 } // namespace dawn
 
@@ -129,7 +151,7 @@ data_view<StorageType> make_host_view(StorageType &storage) {
 
 namespace dawn {
 
-typedef double float_type;
+using float_type = gridtools::dawn::float_type;
 
 namespace driver {
 
