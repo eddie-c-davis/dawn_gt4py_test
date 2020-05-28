@@ -67,6 +67,69 @@ struct domain {
   unsigned ksize() const { return dims[2]; }
 };
 
+struct meta_data {
+  std::array<uint_t, NDIM> shape;
+  std::array<uint_t, NDIM> strides;
+  std::array<uint_t, NHALO> halos;
+
+  meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1) :
+      shape{isize, jsize, ksize} {}
+
+  meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides) :
+      shape(shape), strides(strides) {}
+};
+
+typedef meta_data meta_data_t;
+typedef meta_data meta_data_ijk_t;
+
+template <typename DataType = float_type> struct storage {
+  meta_data m_data;
+  DataType* ptr;
+  ownership platform;
+  std::string name;
+
+  storage() {
+    name = "";
+    platform = ownership::external_cpu;
+    ptr = nullptr;
+  }
+
+  storage(meta_data& meta, const std::string& name) :
+      m_data(meta), name(name) {}
+
+  storage(meta_data meta, DataType* ptr, ownership platform) :
+      m_data(meta), ptr(ptr), platform(platform), name("") {}
+
+  const DataType* data() const noexcept {
+    return ptr;
+  }
+
+  DataType* data() noexcept {
+    return ptr;
+  }
+
+  // read-operator
+  const DataType& at(int i, int j = 0, int k = 0) const {
+    return ptr[(i * m_data.strides[0]) +
+               (j * m_data.strides[1]) +
+               (k * m_data.strides[2])];
+  }
+
+  // write-operator
+  DataType& at(int i, int j = 0, int k = 0) {
+    return ptr[(i * m_data.strides[0]) +
+               (j * m_data.strides[1]) +
+               (k * m_data.strides[2])];
+  }
+
+  void sync() {
+    // No-op...
+  }
+};
+
+typedef storage<float_type> storage_t;
+typedef storage<float_type> storage_ijk_t;
+
 namespace storage_traits_t {
 
 // gridtools::dawn::storage_traits_t::storage_info_t<0, 3, gridtools::halo<3, 3, 0> >::storage_info_t(unsigned int, unsigned int, unsigned int)
@@ -81,46 +144,39 @@ template <int BeginIndex, uint_t Dim, typename HaloType> struct storage_info_t {
 };
 
 template <typename DataType, typename StorageType> struct data_store_t {
-  DataType data_type;
+  storage<DataType> storage_;
   StorageType storage_type;
-};
 
-} // namespace storage_traits_t
+  data_store_t(StorageType& type) : storage_type(type) {
+    storage_.m_data.shape = type.shape;
+    storage_.m_data.halos = type.halo.halos;
+    // Compute strides and size...
+    uint_t size = 1;
+    for(uint_t i = 0; i < type.shape.size(); ++i) {
+      size *= (type.shape[i] + type.halo.halos[i * 2]);
+      // TODO: Need to figure this out!
+      storage_.m_data.strides[i] = 1;
+    }
+    // Allocate pointer...
+    storage_.ptr = new DataType[size];
+  }
 
-struct meta_data {
-  std::array<uint_t, NDIM> shape;
-  std::array<uint_t, NDIM> strides;
-  //std::array<int, NDIM> halos;
+  virtual ~data_store_t() {
+    delete[] storage_.ptr;
+  }
 
-  meta_data(uint_t isize, uint_t jsize, uint_t ksize) :
-            shape{isize, jsize, ksize} {}
+  // read-operator
+  const DataType& at(int i, int j = 0, int k = 0) const {
+    return storage_.at(i, j, k);
+  }
 
-  meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides) :
-            shape(shape), strides(strides) {}
-};
-
-typedef meta_data meta_data_t;
-typedef meta_data meta_data_ijk_t;
-
-template <typename DataType = float_type> struct storage {
-  meta_data m_data;
-  DataType* ptr;
-  ownership platform;
-  std::string name;
-
-  storage(meta_data& meta, const std::string& name) :
-          m_data(meta), name(name) {}
-
-  storage(meta_data meta, DataType* ptr, ownership platform) :
-      m_data(meta), ptr(ptr), platform(platform), name("") {}
-
-  void sync() {
-    // No-op...
+  // write-operator
+  DataType& at(int i, int j = 0, int k = 0) {
+    return storage_.at(i, j, k);
   }
 };
 
-typedef storage<float_type> storage_t;
-typedef storage<float_type> storage_ijk_t;
+} // namespace storage_traits_t
 
 } // namespace dawn
 
@@ -129,16 +185,12 @@ template <typename StorageType, typename DataType = double> struct data_view {
 
   // read-operator
   const DataType& operator()(int i, int j = 0, int k = 0) const {
-    return storage.ptr[(i * storage.m_data.strides[0]) +
-                       (j * storage.m_data.strides[1]) +
-                       (k * storage.m_data.strides[2])];
+    return storage.at(i, j, k);
   }
 
   // write-operator
   DataType& operator()(int i, int j = 0, int k = 0) {
-    return storage.ptr[(i * storage.m_data.strides[0]) +
-                       (j * storage.m_data.strides[1]) +
-                       (k * storage.m_data.strides[2])];
+    return storage.at(i, j, k);
   }
 };
 
