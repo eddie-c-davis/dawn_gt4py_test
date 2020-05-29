@@ -70,7 +70,7 @@ struct domain {
 struct meta_data {
   std::array<uint_t, NDIM> shape;
   std::array<uint_t, NDIM> strides;
-  std::array<uint_t, NHALO> halos;
+  std::array<uint_t, NHALO> halos = {0};
 
   meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1) :
       shape{isize, jsize, ksize} {}
@@ -108,18 +108,21 @@ template <typename DataType = float_type> struct storage {
     return ptr;
   }
 
+  // TODO: Factor halos into offset calculation...
+  inline int offset(int i, int j, int k) const {
+    return (i * m_data.strides[0]) +
+           (j * m_data.strides[1]) +
+           (k * m_data.strides[2]);
+  }
+
   // read-operator
-  const DataType& at(int i, int j = 0, int k = 0) const {
-    return ptr[(i * m_data.strides[0]) +
-               (j * m_data.strides[1]) +
-               (k * m_data.strides[2])];
+  inline const DataType& at(int i, int j = 0, int k = 0) const {
+    return ptr[offset(i, j, k)];
   }
 
   // write-operator
-  DataType& at(int i, int j = 0, int k = 0) {
-    return ptr[(i * m_data.strides[0]) +
-               (j * m_data.strides[1]) +
-               (k * m_data.strides[2])];
+  inline DataType& at(int i, int j = 0, int k = 0) {
+    return ptr[offset(i, j, k)];
   }
 
   void sync() {
@@ -150,15 +153,25 @@ template <typename DataType, typename StorageType> struct data_store_t {
   data_store_t(StorageType& type) : storage_type(type) {
     storage_.m_data.shape = type.shape;
     storage_.m_data.halos = type.halo.halos;
-    // Compute strides and size...
-    uint_t size = 1;
-    for(uint_t i = 0; i < type.shape.size(); ++i) {
-      size *= (type.shape[i] + type.halo.halos[i * 2]);
-      // TODO: Need to figure this out!
-      storage_.m_data.strides[i] = 1;
+
+    // Compute sizes
+    uint_t data_size = 1;
+    std::array<uint_t, NDIM> sizes;
+    for(int i = 0; i < NDIM; ++i) {
+      sizes[i] = type.halo.halos[i * 2] + type.shape[i] +
+                 type.halo.halos[i * 2 + 1];
+      data_size *= sizes[i];
     }
+
+    // Compute strides
+    uint_t stride = 1;
+    for(int i = NDIM - 1; i >= 0; --i) {
+      storage_.m_data.strides[i] = stride;
+      stride *= sizes[i];
+    }
+
     // Allocate pointer...
-    storage_.ptr = new DataType[size];
+    storage_.ptr = new DataType[data_size];
   }
 
   virtual ~data_store_t() {
