@@ -25,3 +25,8 @@ add_executable(
 )
 
 target_link_libraries(dawn_gt4py_test gtest gtest_main pthread)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(dawn_gt4py_test OpenMP::OpenMP_CXX)
+endif()

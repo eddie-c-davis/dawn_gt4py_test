@@ -108,11 +108,10 @@ template <typename DataType = float_type> struct storage {
     return ptr;
   }
 
-  // TODO: Factor halos into offset calculation...
   inline int offset(int i, int j, int k) const {
-    return (i * m_data.strides[0]) +
-           (j * m_data.strides[1]) +
-           (k * m_data.strides[2]);
+    return int(i * m_data.strides[0]) +
+           int(j * m_data.strides[1]) +
+           int(k * m_data.strides[2]);
   }
 
   // read-operator
@@ -149,6 +148,7 @@ template <int BeginIndex, uint_t Dim, typename HaloType> struct storage_info_t {
 template <typename DataType, typename StorageType> struct data_store_t {
   storage<DataType> storage_;
   StorageType storage_type;
+  uint_t offset = 0;
 
   data_store_t(StorageType& type) : storage_type(type) {
     storage_.m_data.shape = type.shape;
@@ -167,14 +167,19 @@ template <typename DataType, typename StorageType> struct data_store_t {
     uint_t stride = 1;
     for(int i = NDIM - 1; i >= 0; --i) {
       storage_.m_data.strides[i] = stride;
+      offset += stride * type.halo.halos[i * 2];
       stride *= sizes[i];
     }
 
     // Allocate pointer...
     storage_.ptr = new DataType[data_size];
+
+    // Shift pointer by halo offset...
+    storage_.ptr += offset;
   }
 
   virtual ~data_store_t() {
+    storage_.ptr -= offset;
     delete[] storage_.ptr;
   }
 
