@@ -9,6 +9,10 @@
 #define GRIDTOOLS_DAWN_HALO_EXTENT 3
 #endif
 
+#ifndef UINT_MAX
+#define UINT_MAX 4294967295
+#endif
+
 #include <array>
 #include <cassert>
 
@@ -75,8 +79,9 @@ struct meta_data {
   meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1) :
       shape{isize, jsize, ksize} {}
 
-  meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides) :
-      shape(shape), strides(strides) {}
+  meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides,
+            std::array<uint_t, NHALO> halos = {0}) :
+      shape(shape), strides(strides), halos(halos) {}
 };
 
 typedef meta_data meta_data_t;
@@ -87,6 +92,7 @@ template <typename DataType = float_type> struct storage {
   DataType* ptr;
   ownership platform;
   std::string name;
+  uint_t offset = UINT_MAX;
 
   storage() {
     name = "";
@@ -94,11 +100,46 @@ template <typename DataType = float_type> struct storage {
     ptr = nullptr;
   }
 
-  storage(meta_data& meta, const std::string& name) :
-      m_data(meta), name(name) {}
-
   storage(meta_data meta, DataType* ptr, ownership platform) :
       m_data(meta), ptr(ptr), platform(platform), name("") {}
+
+  storage(meta_data& meta, const std::string& name = "") :
+      m_data(meta), name(name) {
+    init();
+  }
+
+  virtual ~storage() {
+    if(offset != UINT_MAX) {
+      ptr -= offset;
+      delete[] ptr;
+    }
+  }
+
+  void init() {
+    // Compute sizes
+    uint_t data_size = 1;
+    std::array<uint_t, NDIM> sizes;
+    for(int i = 0; i < NDIM; ++i) {
+      sizes[i] = m_data.halos[i * 2] + m_data.shape[i] +
+                 m_data.halos[i * 2 + 1];
+      data_size *= sizes[i];
+    }
+
+    // Compute strides and offset
+    offset = 0;
+    uint_t stride = 1;
+    for(int i = NDIM - 1; i >= 0; --i) {
+      m_data.strides[i] = stride;
+      offset += stride * m_data.halos[i * 2];
+      stride *= sizes[i];
+    }
+
+    // Allocate pointer...
+    ptr = new DataType[data_size];
+
+    // Shift pointer by halo offset...
+    ptr += offset;
+  }
 
   const DataType* data() const noexcept {
     return ptr;
@@ -108,7 +149,7 @@ template <typename DataType = float_type> struct storage {
     return ptr;
   }
 
-  inline int offset(int i, int j, int k) const {
+  inline int index(int i, int j, int k) const {
     return int(i * m_data.strides[0]) +
            int(j * m_data.strides[1]) +
            int(k * m_data.strides[2]);
@@ -116,12 +157,12 @@ template <typename DataType = float_type> struct storage {
 
   // read-operator
   inline const DataType& at(int i, int j = 0, int k = 0) const {
-    return ptr[offset(i, j, k)];
+    return ptr[index(i, j, k)];
   }
 
   // write-operator
   inline DataType& at(int i, int j = 0, int k = 0) {
-    return ptr[offset(i, j, k)];
+    return ptr[index(i, j, k)];
   }
 
   void sync() {
@@ -148,39 +189,13 @@ template <int BeginIndex, uint_t Dim, typename HaloType> struct storage_info_t {
 template <typename DataType, typename StorageType> struct data_store_t {
   storage<DataType> storage_;
   StorageType storage_type;
-  uint_t offset = 0;
 
   data_store_t(StorageType& type) : storage_type(type) {
     storage_.m_data.shape = type.shape;
     storage_.m_data.halos = type.halo.halos;
 
-    // Compute sizes
-    uint_t data_size = 1;
-    std::array<uint_t, NDIM> sizes;
-    for(int i = 0; i < NDIM; ++i) {
-      sizes[i] = type.halo.halos[i * 2] + type.shape[i] +
-                 type.halo.halos[i * 2 + 1];
-      data_size *= sizes[i];
-    }
-
-    // Compute strides
-    uint_t stride = 1;
-    for(int i = NDIM - 1; i >= 0; --i) {
-      storage_.m_data.strides[i] = stride;
-      offset += stride * type.halo.halos[i * 2];
-      stride *= sizes[i];
-    }
-
-    // Allocate pointer...
-    storage_.ptr = new DataType[data_size];
-
-    // Shift pointer by halo offset...
-    storage_.ptr += offset;
-  }
-
-  virtual ~data_store_t() {
-    storage_.ptr -= offset;
-    delete[] storage_.ptr;
+    storage_.m_data = meta_data{type.shape, {0}, type.halo.halos};
+    storage_.init();
   }
 
   // read-operator
