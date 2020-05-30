@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 include(GoogleTest)
 enable_testing()
 
-include_directories(. ./include)
-#include_directories(. ../gridtools/include ../dawn/dawn/src)
+#include_directories(. ./include)
+include_directories(. ../gridtools/include ../dawn/dawn/src)
 
 add_executable(
     dawn_gt4py_test
