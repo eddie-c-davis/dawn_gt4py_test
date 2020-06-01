@@ -7,5 +7,6 @@
 
 #include "../gridtools/common/defs.hpp"
 #include "../gridtools/common/gt_math.hpp"
+#include "../gridtools/common/timer/timer_cuda.hpp"
 
 #endif // DAWN_GT4PY_TEST_GRIDTOOLS_INCLUDES_HPP
