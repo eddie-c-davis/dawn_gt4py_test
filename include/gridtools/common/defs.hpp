@@ -232,6 +232,11 @@ data_view<StorageType> make_host_view(StorageType &storage) {
   return data_view<StorageType>{storage};
 }
 
+template <typename StorageType>
+data_view<StorageType> make_device_view(StorageType &storage) {
+  return data_view<StorageType>{storage};
+}
+
 } // namespace gridtools
 
 namespace dawn {

@@ -2,6 +2,7 @@
 #define DAWN_GT4PY_TEST_TIMER_CUDA_HPP
 
 namespace gridtools {
+namespace dawn {
 
 class timer_cuda {
 protected:
@@ -9,23 +10,18 @@ protected:
   double total_time_ = 0.0;
 
 public:
-  timer_cuda(const std::string& name = "") : name_(name) {
-    total_time_ = 0.0;
-  }
+  timer_cuda(const std::string &name = "") : name_(name) {}
 
-  double total_time() {
-    return total_time_;
-  }
+  double total_time() { return total_time_; }
 
-  void start() {
-    total_time_ = 0.0;
-  }
+  void start() { total_time_ = 0.0; }
 
   void reset() {}
 
   void pause() {}
 };
 
-} // gridtools
+} // namespace dawn
+} // namespace gridtools
 
 #endif // DAWN_GT4PY_TEST_TIMER_CUDA_HPP
