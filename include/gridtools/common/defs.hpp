@@ -74,14 +74,19 @@ struct domain {
 struct meta_data {
   std::array<uint_t, NDIM> shape;
   std::array<uint_t, NDIM> strides;
-  std::array<uint_t, NHALO> halos = {0};
+  std::array<uint_t, NHALO> halos = {GRIDTOOLS_DAWN_HALO_EXTENT,
+                                     GRIDTOOLS_DAWN_HALO_EXTENT,
+                                     GRIDTOOLS_DAWN_HALO_EXTENT,
+                                     GRIDTOOLS_DAWN_HALO_EXTENT,
+                                     0,
+                                     0};
 
-  meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1) :
-      shape{isize, jsize, ksize} {}
+  meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1)
+      : shape{isize, jsize, ksize} {}
 
   meta_data(std::array<uint_t, NDIM> shape, std::array<uint_t, NDIM> strides,
-            std::array<uint_t, NHALO> halos = {0}) :
-      shape(shape), strides(strides), halos(halos) {}
+            std::array<uint_t, NHALO> halos = {0})
+      : shape(shape), strides(strides), halos(halos) {}
 };
 
 typedef meta_data meta_data_t;
@@ -100,11 +105,11 @@ template <typename DataType = float_type> struct storage {
     ptr = nullptr;
   }
 
-  storage(meta_data meta, DataType* ptr, ownership platform) :
-      m_data(meta), ptr(ptr), platform(platform), name("") {}
+  storage(meta_data meta, DataType* ptr, ownership platform)
+      : m_data(meta), ptr(ptr), platform(platform), name("") {}
 
-  storage(meta_data& meta, const std::string& name = "") :
-      m_data(meta), name(name) {
+  storage(meta_data& meta, const std::string& name = "")
+      : m_data(meta), name(name) {
     init();
   }
 
@@ -120,8 +125,8 @@ template <typename DataType = float_type> struct storage {
     uint_t data_size = 1;
     std::array<uint_t, NDIM> sizes;
     for(int i = 0; i < NDIM; ++i) {
-      sizes[i] = m_data.halos[i * 2] + m_data.shape[i] +
-                 m_data.halos[i * 2 + 1];
+      sizes[i] =
+          m_data.halos[i * 2] + m_data.shape[i] + m_data.halos[i * 2 + 1];
       data_size *= sizes[i];
     }
 
@@ -141,17 +146,12 @@ template <typename DataType = float_type> struct storage {
     ptr += offset;
   }
 
-  const DataType* data() const noexcept {
-    return ptr;
-  }
+  const DataType* data() const noexcept { return ptr; }
 
-  DataType* data() noexcept {
-    return ptr;
-  }
+  DataType* data() noexcept { return ptr; }
 
   inline int index(int i, int j, int k) const {
-    return int(i * m_data.strides[0]) +
-           int(j * m_data.strides[1]) +
+    return int(i * m_data.strides[0]) + int(j * m_data.strides[1]) +
            int(k * m_data.strides[2]);
   }
 
@@ -175,15 +175,16 @@ typedef storage<float_type> storage_ijk_t;
 
 namespace storage_traits_t {
 
-// gridtools::dawn::storage_traits_t::storage_info_t<0, 3, gridtools::halo<3, 3, 0> >::storage_info_t(unsigned int, unsigned int, unsigned int)
+// gridtools::dawn::storage_traits_t::storage_info_t<0, 3, gridtools::halo<3, 3,
+// 0> >::storage_info_t(unsigned int, unsigned int, unsigned int)
 template <int BeginIndex, uint_t Dim, typename HaloType> struct storage_info_t {
   int begin_index = BeginIndex;
   uint_t dim = Dim;
   HaloType halo;
   std::array<uint_t, NDIM> shape;
 
-  storage_info_t(uint_t isize, uint_t jsize, uint_t ksize) :
-                 shape{isize, jsize, ksize} {}
+  storage_info_t(uint_t isize, uint_t jsize, uint_t ksize)
+      : shape{isize, jsize, ksize} {}
 };
 
 template <typename DataType, typename StorageType> struct data_store_t {
@@ -204,9 +205,7 @@ template <typename DataType, typename StorageType> struct data_store_t {
   }
 
   // write-operator
-  DataType& at(int i, int j = 0, int k = 0) {
-    return storage_.at(i, j, k);
-  }
+  DataType& at(int i, int j = 0, int k = 0) { return storage_.at(i, j, k); }
 };
 
 } // namespace storage_traits_t
@@ -214,7 +213,7 @@ template <typename DataType, typename StorageType> struct data_store_t {
 } // namespace dawn
 
 template <typename StorageType, typename DataType = double> struct data_view {
-  StorageType &storage;
+  StorageType& storage;
 
   // read-operator
   const DataType& operator()(int i, int j = 0, int k = 0) const {
@@ -228,12 +227,12 @@ template <typename StorageType, typename DataType = double> struct data_view {
 };
 
 template <typename StorageType>
-data_view<StorageType> make_host_view(StorageType &storage) {
+data_view<StorageType> make_host_view(StorageType& storage) {
   return data_view<StorageType>{storage};
 }
 
 template <typename StorageType>
-data_view<StorageType> make_device_view(StorageType &storage) {
+data_view<StorageType> make_device_view(StorageType& storage) {
   return data_view<StorageType>{storage};
 }
 
