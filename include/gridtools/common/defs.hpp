@@ -74,12 +74,7 @@ struct domain {
 struct meta_data {
   std::array<uint_t, NDIM> shape;
   std::array<uint_t, NDIM> strides;
-  std::array<uint_t, NHALO> halos = {GRIDTOOLS_DAWN_HALO_EXTENT,
-                                     GRIDTOOLS_DAWN_HALO_EXTENT,
-                                     GRIDTOOLS_DAWN_HALO_EXTENT,
-                                     GRIDTOOLS_DAWN_HALO_EXTENT,
-                                     0,
-                                     0};
+  std::array<uint_t, NHALO> halos = {0};
 
   meta_data(uint_t isize = 1, uint_t jsize = 1, uint_t ksize = 1)
       : shape{isize, jsize, ksize} {}
