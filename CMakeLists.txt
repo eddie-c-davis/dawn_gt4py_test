@@ -10,8 +10,10 @@ include_directories(. ../gridtools/include ../dawn/dawn/src ../dawn/install/incl
 
 add_executable(
     dawn_gt4py_test
-#    /mnt/ram/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__cxxopt_5a4b3474ff_pyext_BUILD/computation.cpp
-#    /mnt/ram/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__cxxopt_5a4b3474ff_pyext_BUILD/unit_test.cpp
+    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__cxxopt_7ada0bade9_pyext_BUILD/computation.cpp
+    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__cxxopt_7ada0bade9_pyext_BUILD/unit_test.cpp
+    /mnt/ram/.gt_cache/py37_1013/dawncxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__dawncxxopt_7ada0bade9_pyext_BUILD/computation.cpp
+    /mnt/ram/.gt_cache/py37_1013/dawncxxopt/fv3/utils/gt4py_utils/m_update_kinetic_energy__dawncxxopt_7ada0bade9_pyext_BUILD/unit_test.cpp
 #    /mnt/ram/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_p_grad_c_ustencil__cxxopt_3523155bef_pyext_BUILD/computation.cpp
 #    /mnt/ram/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_p_grad_c_ustencil__cxxopt_3523155bef_pyext_BUILD/unit_test.cpp
 #    /mnt/ram/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_p_grad_c_vstencil__cxxopt_26e0af8086_pyext_BUILD/computation.cpp
@@ -22,8 +24,8 @@ add_executable(
 #    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_set_vals_1__cxxopt_2de0648616_pyext_BUILD/unit_test.cpp
 #    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_set_extm__cxxopt_4eee958721_pyext_BUILD/computation.cpp
 #    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_set_extm__cxxopt_4eee958721_pyext_BUILD/unit_test.cpp
-#    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_dz_c__cxxopt_f2cdfd7661_pyext_BUILD/computation.cpp
-#    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_dz_c__cxxopt_f2cdfd7661_pyext_BUILD/unit_test.cpp
+    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_dz_c__cxxopt_f2cdfd7661_pyext_BUILD/computation.cpp
+    /mnt/ram/.gt_cache/py37_1013/cxxopt/fv3/utils/gt4py_utils/m_update_dz_c__cxxopt_f2cdfd7661_pyext_BUILD/unit_test.cpp
     /mnt/ram/.gt_cache/py37_1013/dawncxxopt/fv3/utils/gt4py_utils/m_update_dz_c__dawncxxopt_f2cdfd7661_pyext_BUILD/computation.cpp
     /mnt/ram/.gt_cache/py37_1013/dawncxxopt/fv3/utils/gt4py_utils/m_update_dz_c__dawncxxopt_f2cdfd7661_pyext_BUILD/unit_test.cpp
     /home/eddied/Work/clang-gridtools/benchmarks/utils/benchmark_writer.cpp
